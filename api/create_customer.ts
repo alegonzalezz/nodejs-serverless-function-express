@@ -40,7 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     log = 'clientData: ' + JSON.stringify(clientData);
     // Insertar nuevo cliente
     const { data, error } = await supabase
-      .from('customers')
+      .from('client')
       .insert([
         { email, names, phone_number, dealership_id }
       ]);
