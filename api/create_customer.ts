@@ -1,52 +1,44 @@
-import express from 'express';
+import { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
-const app = express();
-app.use(express.json());
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '' ;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  const { email, names, phone_number, dealership_id } = req.body;
 
-app.post('/create_customer', async (req, res) => {
-    const { email, names, phone_number, dealership_id } = req.body;
+  if (!email || !names || !phone_number || !dealership_id) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
 
-    if (!email || !names || !phone_number || !dealership_id) {
-        return res.status(400).json({ error: 'Missing required fields' });
+  try {
+    const supabase = createClientComponentClient();
+
+    // Verificar si el cliente ya existe
+    const { data: clientData, error: clientError } = await supabase
+      .from('client')
+      .select('*')
+      .match({ email: email, phone_number: phone_number });
+
+    if (clientError || clientData.length > 0) {
+      return res.status(400).json({ message: 'Client already exists' });
     }
-    
-    try {
-        const supabase = createClientComponentClient()
 
+    // Insertar nuevo cliente
+    const { data, error } = await supabase
+      .from('customers')
+      .insert([
+        { email, names, phone_number, dealership_id }
+      ]);
 
-            const {  data: clientData, error: clientError } = await supabase
-        .from("client")
-        .select("*")
-        .match({ email: email, phone_number: phone_number });
-
-        if(clientError || clientData.length > 0){
-            return Response.json({ message: 'Client already exists' }, { status: 400 });
-            res.status(201).json({ message: 'Client already exists' });
-        }else {
-
-            const { data, error } = await supabase
-            .from('customers')
-            .insert([
-                { email, names, phone_number, dealership_id }
-            ]);
-
-        if (error) {
-            throw error;
-        }
-
-        res.status(201).json(data);
-        }
-
-    } catch (error) {
-        res.status(500).json({ error: error.message });
+    if (error) {
+      throw error;
     }
-});
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-});
+    return res.status(201).json(data);
+
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+}
