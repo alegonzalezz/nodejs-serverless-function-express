@@ -1,5 +1,10 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -13,7 +18,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const supabase = createClientComponentClient();
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
 
     // Verificar si el cliente ya existe
     const { data: clientData, error: clientError } = await supabase
