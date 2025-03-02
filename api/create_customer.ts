@@ -1,13 +1,11 @@
 import express from 'express';
-import { createClient } from '@supabase/supabase-js';
-import { v4 as uuidv4 } from 'uuid';
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 
 const app = express();
 app.use(express.json());
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '' ;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 app.post('/create_customer', async (req, res) => {
     const { email, names, phone_number, dealership_id } = req.body;
@@ -17,6 +15,8 @@ app.post('/create_customer', async (req, res) => {
     }
     
     try {
+        const supabase = createClientComponentClient()
+
 
             const {  data: clientData, error: clientError } = await supabase
         .from("client")
